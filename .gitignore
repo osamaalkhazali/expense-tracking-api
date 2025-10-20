@@ -7,6 +7,9 @@
 /storage/pail
 /vendor
 .env
+
+# Ignore Firebase credentials
+/storage/firebase/firebase_credentials.json
 .env.backup
 .env.production
 .phpactor.json
