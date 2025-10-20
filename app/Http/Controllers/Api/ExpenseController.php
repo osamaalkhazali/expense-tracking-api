@@ -163,4 +163,31 @@ class ExpenseController extends Controller implements HasMiddleware
             'message' => 'Expense deleted successfully'
         ]);
     }
+
+    /**
+     * Get expense summary by category
+     */
+    public function summary(Request $request)
+    {
+        $request->validate([
+            'from' => 'required|date',
+            'to' => 'required|date|after_or_equal:from',
+        ]);
+
+        $user = $request->user();
+
+        $expenses = Expense::where('user_id', $user->id)
+            ->whereBetween('expense_date', [$request->from, $request->to])
+            ->get();
+
+        $summary = $expenses->groupBy('category')
+            ->map(function ($categoryExpenses) {
+                return round($categoryExpenses->sum('amount'), 2);
+            });
+
+        return response()->json([
+            'currency' => $user->preferred_currency,
+            'summary' => $summary
+        ]);
+    }
 }
