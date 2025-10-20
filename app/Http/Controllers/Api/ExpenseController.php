@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
 use App\Services\CurrencyService;
+use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -13,10 +14,12 @@ use Illuminate\Support\Facades\Gate;
 class ExpenseController extends Controller implements HasMiddleware
 {
     protected CurrencyService $currencyService;
+    protected FirebaseService $firebase;
 
-    public function __construct(CurrencyService $currencyService)
+    public function __construct(CurrencyService $currencyService, FirebaseService $firebase)
     {
         $this->currencyService = $currencyService;
+        $this->firebase = $firebase;
     }
 
     public static function middleware()
@@ -83,6 +86,14 @@ class ExpenseController extends Controller implements HasMiddleware
             'expense_date' => $fields['expense_date'],
         ]);
 
+        // Log event to Firebase Analytics
+        $this->firebase->dispatchEvent('expense_created', [
+            'user_id' => $user->id,
+            'amount' => $convertedAmount,
+            'currency' => $user->preferred_currency,
+            'category' => $fields['category']
+        ]);
+
         return response()->json([
             'message' => 'Expense created successfully',
             'expense' => $expense
@@ -119,6 +130,13 @@ class ExpenseController extends Controller implements HasMiddleware
 
         $expense->update($fields);
 
+        // Log event to Firebase Analytics
+        $this->firebase->dispatchEvent('expense_updated', [
+            'user_id' => $request->user()->id,
+            'expense_id' => $expense->id,
+            'amount' => $expense->amount
+        ]);
+
         return response()->json([
             'message' => 'Expense updated successfully',
             'expense' => $expense
@@ -132,6 +150,12 @@ class ExpenseController extends Controller implements HasMiddleware
     {
         // Only the expense owner can delete it
         Gate::authorize('modify', $expense);
+
+        // Log event to Firebase Analytics before deleting
+        $this->firebase->dispatchEvent('expense_deleted', [
+            'user_id' => $expense->user_id,
+            'expense_id' => $expense->id
+        ]);
 
         $expense->delete();
 

@@ -39,4 +39,8 @@ return [
         'api_key' => env('CURRENCY_API_KEY', ''),
     ],
 
+    'firebase' => [
+        'credentials' => env('FIREBASE_CREDENTIALS', storage_path('firebase/firebase_credentials.json')),
+    ],
+
 ];
