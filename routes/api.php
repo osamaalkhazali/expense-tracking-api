@@ -5,6 +5,11 @@ use App\Http\Controllers\Api\ExpenseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
+// API Documentation - OpenAPI JSON
+Route::get('/docs', function () {
+    return response()->file(storage_path('api-docs/api-docs.json'));
+});
+
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
