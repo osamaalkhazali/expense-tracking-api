@@ -8,7 +8,30 @@ use App\Services\FirebaseService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Info(
+ *     title="Expense Tracking API",
+ *     version="1.0.0",
+ *     description="RESTful API for expense management with currency conversion and Firebase Analytics",
+ *     @OA\Contact(
+ *         email="osama.khazali97@gmail.com",
+ *         name="Osama Al-Khazali"
+ *     )
+ * )
+ * @OA\Server(
+ *     url="http://localhost:8000/api",
+ *     description="Local Development Server"
+ * )
+ * @OA\SecurityScheme(
+ *     securityScheme="sanctum",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ *     description="Enter token in format: Bearer {token}"
+ * )
+ */
 class AuthController extends Controller
 {
     protected FirebaseService $firebase;
@@ -17,8 +40,41 @@ class AuthController extends Controller
     {
         $this->firebase = $firebase;
     }
+
     /**
-     * Register a new user
+     * @OA\Post(
+     *     path="/register",
+     *     summary="Register a new user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password"},
+     *             @OA\Property(property="name", type="string", example="John Doe"),
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123"),
+     *             @OA\Property(property="password_confirmation", type="string", format="password", example="password123"),
+     *             @OA\Property(property="preferred_currency", type="string", example="USD", enum={"USD","EUR","JOD","GBP","AED","SAR","KWD","BHD","QAR","OMR"})
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="User registered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="User registered successfully"),
+     *             @OA\Property(property="user", ref="#/components/schemas/User"),
+     *             @OA\Property(property="token", type="string", example="1|xxxxxxxxxxxxxxxxxxxx")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The email has already been taken."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
      */
     public function register(Request $request)
     {
@@ -52,7 +108,36 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user and create token
+     * @OA\Post(
+     *     path="/login",
+     *     summary="Login user",
+     *     tags={"Authentication"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="password", type="string", format="password", example="password123")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Login successful"),
+     *             @OA\Property(property="user", ref="#/components/schemas/User"),
+     *             @OA\Property(property="token", type="string", example="2|xxxxxxxxxxxxxxxxxxxx")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Invalid credentials",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The provided credentials are incorrect."),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     )
+     * )
      */
     public function login(Request $request)
     {
@@ -79,7 +164,26 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user (Revoke the token)
+     * @OA\Post(
+     *     path="/logout",
+     *     summary="Logout user",
+     *     tags={"Authentication"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Logged out successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Logged out successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     )
+     * )
      */
     public function logout(Request $request)
     {

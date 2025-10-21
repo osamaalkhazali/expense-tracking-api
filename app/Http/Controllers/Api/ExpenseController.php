@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Gate;
+use OpenApi\Annotations as OA;
 
 class ExpenseController extends Controller implements HasMiddleware
 {
@@ -30,7 +31,45 @@ class ExpenseController extends Controller implements HasMiddleware
     }
 
     /**
-     * Display a listing of expenses with optional filters
+     * @OA\Get(
+     *     path="/expenses",
+     *     summary="Get list of expenses",
+     *     tags={"Expenses"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="category",
+     *         in="query",
+     *         description="Filter by category",
+     *         required=false,
+     *         @OA\Schema(type="string", enum={"food","travel","utilities","entertainment","healthcare","shopping","education","other"})
+     *     ),
+     *     @OA\Parameter(
+     *         name="start_date",
+     *         in="query",
+     *         description="Filter by start date",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date", example="2025-10-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="end_date",
+     *         in="query",
+     *         description="Filter by end date",
+     *         required=false,
+     *         @OA\Schema(type="string", format="date", example="2025-10-31")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of expenses",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Expense")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function index(Request $request)
     {
@@ -55,7 +94,36 @@ class ExpenseController extends Controller implements HasMiddleware
     }
 
     /**
-     * Store a newly created expense with currency conversion
+     * @OA\Post(
+     *     path="/expenses",
+     *     summary="Create a new expense",
+     *     tags={"Expenses"},
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"title","original_amount","original_currency","category","expense_date"},
+     *             @OA\Property(property="title", type="string", example="Lunch at Restaurant"),
+     *             @OA\Property(property="original_amount", type="number", format="float", example=45.50),
+     *             @OA\Property(property="original_currency", type="string", example="EUR"),
+     *             @OA\Property(property="category", type="string", example="food", enum={"food","travel","utilities","entertainment","healthcare","shopping","education","other"}),
+     *             @OA\Property(property="expense_date", type="string", format="date", example="2025-10-20")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Expense created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Expense")
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function store(Request $request)
     {
@@ -101,7 +169,49 @@ class ExpenseController extends Controller implements HasMiddleware
     }
 
     /**
-     * Update the specified expense with conversion if currency changed
+     * @OA\Put(
+     *     path="/expenses/{id}",
+     *     summary="Update an expense",
+     *     tags={"Expenses"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Expense ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=false,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="title", type="string", example="Updated Lunch"),
+     *             @OA\Property(property="original_amount", type="number", format="float", example=55.00),
+     *             @OA\Property(property="original_currency", type="string", example="USD"),
+     *             @OA\Property(property="category", type="string", example="food"),
+     *             @OA\Property(property="expense_date", type="string", format="date", example="2025-10-20")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Expense updated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Expense updated successfully"),
+     *             @OA\Property(property="expense", ref="#/components/schemas/Expense")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized to update this expense"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Expense not found"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function update(Request $request, Expense $expense)
     {
@@ -144,7 +254,38 @@ class ExpenseController extends Controller implements HasMiddleware
     }
 
     /**
-     * Remove the specified expense
+     * @OA\Delete(
+     *     path="/expenses/{id}",
+     *     summary="Delete an expense",
+     *     tags={"Expenses"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Expense ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Expense deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Expense deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Unauthorized to delete this expense"
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Expense not found"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function destroy(Expense $expense)
     {
@@ -165,7 +306,49 @@ class ExpenseController extends Controller implements HasMiddleware
     }
 
     /**
-     * Get expense summary by category
+     * @OA\Get(
+     *     path="/expenses/summary",
+     *     summary="Get expense summary by category",
+     *     tags={"Expenses"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Parameter(
+     *         name="from",
+     *         in="query",
+     *         description="Start date",
+     *         required=true,
+     *         @OA\Schema(type="string", format="date", example="2025-10-01")
+     *     ),
+     *     @OA\Parameter(
+     *         name="to",
+     *         in="query",
+     *         description="End date",
+     *         required=true,
+     *         @OA\Schema(type="string", format="date", example="2025-10-31")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Expense summary by category",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="currency", type="string", example="USD"),
+     *             @OA\Property(
+     *                 property="summary",
+     *                 type="object",
+     *                 @OA\Property(property="food", type="number", format="float", example=450.75),
+     *                 @OA\Property(property="travel", type="number", format="float", example=320.00),
+     *                 @OA\Property(property="utilities", type="number", format="float", example=150.50),
+     *                 @OA\Property(property="entertainment", type="number", format="float", example=85.25)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
      */
     public function summary(Request $request)
     {

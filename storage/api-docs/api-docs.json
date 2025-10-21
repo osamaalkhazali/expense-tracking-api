@@ -1,0 +1,767 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Expense Tracking API",
+        "description": "RESTful API for expense management with currency conversion and Firebase Analytics",
+        "contact": {
+            "name": "Osama Al-Khazali",
+            "email": "osama.khazali97@gmail.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "Local Development Server"
+        }
+    ],
+    "paths": {
+        "/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user",
+                "operationId": "5d4fa5d5607ed675ba93907e1fc94534",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "preferred_currency": {
+                                        "type": "string",
+                                        "enum": [
+                                            "USD",
+                                            "EUR",
+                                            "JOD",
+                                            "GBP",
+                                            "AED",
+                                            "SAR",
+                                            "KWD",
+                                            "BHD",
+                                            "QAR",
+                                            "OMR"
+                                        ],
+                                        "example": "USD"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "User registered successfully"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "1|xxxxxxxxxxxxxxxxxxxx"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The email has already been taken."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login user",
+                "operationId": "67d6d0fdd54fba132e1b6f55ca254183",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Login successful"
+                                        },
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string",
+                                            "example": "2|xxxxxxxxxxxxxxxxxxxx"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The provided credentials are incorrect."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "operationId": "28d48c13fca984400ac8de99f54ee13a",
+                "responses": {
+                    "200": {
+                        "description": "Logged out successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Logged out successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/expenses": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Get list of expenses",
+                "operationId": "c04e67a370a09680bd3ddc08240a3ad3",
+                "parameters": [
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "description": "Filter by category",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "food",
+                                "travel",
+                                "utilities",
+                                "entertainment",
+                                "healthcare",
+                                "shopping",
+                                "education",
+                                "other"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Filter by start date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Filter by end date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of expenses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Expense"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Create a new expense",
+                "operationId": "cc361966059d264190714b55cbc39669",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "original_amount",
+                                    "original_currency",
+                                    "category",
+                                    "expense_date"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Lunch at Restaurant"
+                                    },
+                                    "original_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 45.5
+                                    },
+                                    "original_currency": {
+                                        "type": "string",
+                                        "example": "EUR"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "food",
+                                            "travel",
+                                            "utilities",
+                                            "entertainment",
+                                            "healthcare",
+                                            "shopping",
+                                            "education",
+                                            "other"
+                                        ],
+                                        "example": "food"
+                                    },
+                                    "expense_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-10-20"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Expense created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Expense"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/expenses/{id}": {
+            "put": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Update an expense",
+                "operationId": "9427c5966e75e9e9fbeed4cf573ba242",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Expense ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Updated Lunch"
+                                    },
+                                    "original_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 55
+                                    },
+                                    "original_currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "example": "food"
+                                    },
+                                    "expense_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-10-20"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Expense updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Expense updated successfully"
+                                        },
+                                        "expense": {
+                                            "$ref": "#/components/schemas/Expense"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized to update this expense"
+                    },
+                    "404": {
+                        "description": "Expense not found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Delete an expense",
+                "operationId": "22ba7092868320420e08828ba13b2557",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Expense ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expense deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Expense deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized to delete this expense"
+                    },
+                    "404": {
+                        "description": "Expense not found"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/expenses/summary": {
+            "get": {
+                "tags": [
+                    "Expenses"
+                ],
+                "summary": "Get expense summary by category",
+                "operationId": "7318ac9999f632e7e274f5371c243c03",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "description": "Start date",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-01"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "description": "End date",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-10-31"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expense summary by category",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "currency": {
+                                            "type": "string",
+                                            "example": "USD"
+                                        },
+                                        "summary": {
+                                            "properties": {
+                                                "food": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 450.75
+                                                },
+                                                "travel": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 320
+                                                },
+                                                "utilities": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 150.5
+                                                },
+                                                "entertainment": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 85.25
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Expense": {
+                "title": "Expense",
+                "required": [
+                    "id",
+                    "user_id",
+                    "title",
+                    "amount",
+                    "category",
+                    "expense_date"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "user_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Grocery Shopping"
+                    },
+                    "amount": {
+                        "description": "Amount in user's preferred currency",
+                        "type": "number",
+                        "format": "float",
+                        "example": 50.25
+                    },
+                    "original_amount": {
+                        "description": "Original amount entered",
+                        "type": "number",
+                        "format": "float",
+                        "example": 45.5
+                    },
+                    "original_currency": {
+                        "description": "Original currency code",
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "category": {
+                        "type": "string",
+                        "enum": [
+                            "food",
+                            "travel",
+                            "utilities",
+                            "entertainment",
+                            "healthcare",
+                            "shopping",
+                            "education",
+                            "other"
+                        ],
+                        "example": "food"
+                    },
+                    "expense_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-10-20"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-10-20T10:30:00.000000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-10-20T10:30:00.000000Z"
+                    }
+                },
+                "type": "object"
+            },
+            "User": {
+                "title": "User",
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "preferred_currency"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "preferred_currency": {
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-10-20T10:30:00.000000Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-10-20T10:30:00.000000Z"
+                    }
+                },
+                "type": "object"
+            }
+        },
+        "securitySchemes": {
+            "sanctum": {
+                "type": "http",
+                "description": "Enter token in format: Bearer {token}",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "Authentication"
+        },
+        {
+            "name": "Expenses",
+            "description": "Expenses"
+        }
+    ]
+}

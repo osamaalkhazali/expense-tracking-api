@@ -2,6 +2,8 @@
 
 A feature-rich RESTful API for expense management with real-time currency conversion and Firebase Analytics integration. Built with Laravel 11, this API demonstrates enterprise-level patterns including authentication, third-party integrations, caching strategies, and asynchronous job processing.
 
+[![Swagger API Documentation](https://img.shields.io/badge/API-Swagger-green.svg)](http://localhost:8000/api/documentation)
+
 ## 📋 Table of Contents
 
 - [Features](#features)
@@ -11,6 +13,7 @@ A feature-rich RESTful API for expense management with real-time currency conver
 - [Database Setup](#database-setup)
 - [Running the Application](#running-the-application)
 - [API Documentation](#api-documentation)
+- [Swagger UI](#swagger-ui)
 - [Firebase Analytics Events](#firebase-analytics-events)
 - [Queue System](#queue-system)
 - [Testing](#testing)
@@ -44,6 +47,7 @@ A feature-rich RESTful API for expense management with real-time currency conver
 - **Database**: MySQL
 - **Queue Driver**: Database (configurable to Redis/SQS)
 - **Cache**: File-based (configurable to Redis/Memcached)
+- **API Documentation**: L5-Swagger (OpenAPI 3.0)
 - **Third-Party APIs**:
   - Currency Conversion API (https://api.exchangerate-api.com)
   - Google Analytics 4 Measurement Protocol
@@ -55,9 +59,14 @@ A feature-rich RESTful API for expense management with real-time currency conver
 ### Prerequisites
 - PHP >= 8.2
 - Composer
-- MySQL
+- MySQL (Laragon recommended for Windows)
 - Node.js & NPM (for frontend assets, optional)
 - Firebase project with Admin SDK credentials
+
+**Recommended for Windows:**
+- [Laragon](https://laragon.org/) - Portable development environment
+- Includes: Apache, MySQL, PHP, Composer
+- Easy setup and management
 
 ### Step 1: Clone the Repository
 ```bash
@@ -69,6 +78,8 @@ cd expense-tracking-api
 ```bash
 composer install --ignore-platform-reqs
 ```
+
+**Note:** The `--ignore-platform-reqs` flag is used because the Firebase SDK requires the `ext-sodium` extension. This is safe for development on Windows with Laragon.
 
 ### Step 3: Environment Setup
 ```bash
@@ -117,10 +128,17 @@ Place your Firebase credentials JSON file in:
 storage/firebase/firebase_credentials.json
 ```
 
-Update `.env`:
+**Important for Windows:** Use the full absolute path in `.env`:
 ```env
-FIREBASE_CREDENTIALS=C:\full\path\to\storage\firebase\firebase_credentials.json
+FIREBASE_CREDENTIALS=C:\laragon\www\expense-tracking-api\storage\firebase\firebase_credentials.json
 ```
+
+**Steps to get Firebase credentials:**
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Select your project
+3. Go to Project Settings → Service Accounts
+4. Click "Generate New Private Key"
+5. Save the JSON file to `storage/firebase/firebase_credentials.json`
 
 ### 5. Currency API Configuration
 ```env
@@ -158,7 +176,7 @@ php artisan serve
 API will be available at: `http://localhost:8000`
 
 ### Start the Queue Worker
-In a separate terminal:
+In a separate terminal/command prompt:
 ```bash
 php artisan queue:work --tries=3 --timeout=30
 ```
@@ -169,25 +187,34 @@ php artisan queue:listen
 ```
 
 ### Schedule Daily Emails
-The application includes a scheduled task to send daily expense summaries. To enable it:
+The application includes a scheduled task to send daily expense summaries.
 
-**For Development (Manual Testing):**
+**Enable the Scheduler (Windows Task Scheduler):**
+
+1. Open **Task Scheduler** (search in Windows Start menu)
+2. Click **Create Basic Task**
+3. Name: "Laravel Scheduler - Expense Tracking"
+4. Trigger: **Daily**
+5. Action: **Start a program**
+6. Program/script: `C:\path\to\php.exe` (e.g., `C:\wamp64\bin\php\php8.3.14\php.exe`)
+7. Arguments: `artisan schedule:run`
+8. Start in: `C:\laragon\www\expense-tracking-api`
+9. In **Settings**, check "Run task as soon as possible after a scheduled start is missed"
+10. Set the task to repeat every **1 minute** for a duration of **1 day**
+
+**For Manual Testing:**
 ```bash
 php artisan email:daily-summary [user_id]
 ```
 
-**For Production (Linux/Mac):**
-Add to crontab:
+Example:
 ```bash
-* * * * * cd /path-to-project && php artisan schedule:run >> /dev/null 2>&1
-```
+# Send to specific user
+php artisan email:daily-summary 1
 
-**For Production (Windows):**
-Create a scheduled task that runs:
-```bash
-php artisan schedule:run
+# Send to all users
+php artisan email:daily-summary
 ```
-Every minute.
 
 ## 📚 API Documentation
 
@@ -195,6 +222,32 @@ Every minute.
 ```
 http://localhost:8000/api
 ```
+
+### 📖 Interactive Swagger Documentation
+
+Access the complete interactive API documentation at:
+**[http://localhost:8000/api/documentation](http://localhost:8000/api/documentation)**
+
+You can also access the raw OpenAPI JSON specification at:
+**[http://localhost:8000/api-docs.json](http://localhost:8000/api-docs.json)**
+
+Or view the stored file directly:
+```
+storage/api-docs/api-docs.json
+```
+
+The Swagger UI provides:
+- 🔍 **Interactive API Explorer** - Test endpoints directly from the browser
+- 📝 **Complete Request/Response Examples** - See all parameters and response structures
+- 🔐 **Authentication Testing** - Easily test authenticated endpoints with bearer tokens
+- 📋 **Schema Definitions** - Detailed model schemas for all resources
+- 🚀 **Try It Out** - Execute real API calls and see live responses
+
+#### Using Swagger UI:
+1. Start your development server: `php artisan serve`
+2. Open [http://localhost:8000/api/documentation](http://localhost:8000/api/documentation)
+3. Click "Authorize" button and enter your token in format: `Bearer {your-token}`
+4. Expand any endpoint and click "Try it out" to test it
 
 ### Authentication Endpoints
 
@@ -394,6 +447,21 @@ The API supports 150+ currencies including:
 
 The application automatically tracks the following events:
 
+### Implementation Note
+The task requirements specified using **Firebase Admin SDK for PHP** to send events to Firebase Analytics. However, the Firebase Admin SDK for PHP does not directly support sending analytics events (it's designed for authentication, database, and messaging operations).
+
+**Solution Implemented:**
+- ✅ **Firebase Admin SDK** is installed and configured (`kreait/laravel-firebase`)
+- ✅ **Google Analytics 4 Measurement Protocol** is used to actually send the events
+- ✅ Events are sent asynchronously via queue jobs to avoid blocking requests
+- ✅ All Firebase credentials and configuration are maintained as required
+
+This hybrid approach:
+- Satisfies the Firebase SDK requirement (package is installed and configured)
+- Actually delivers events to Firebase/Google Analytics (via Measurement Protocol)
+- Provides better performance (async queue processing)
+- Offers detailed logging for debugging
+
 ### user_registered
 Triggered when a new user signs up.
 ```json
@@ -471,6 +539,13 @@ php artisan queue:retry all
 
 ## 🧪 Testing
 
+### Regenerating API Documentation
+
+After making changes to controller annotations, regenerate the Swagger documentation:
+```bash
+php artisan l5-swagger:generate
+```
+
 ### Manual Testing with Postman
 
 1. Import the API collection (if provided)
@@ -510,23 +585,24 @@ expense-tracking-api/
 │   ├── Http/
 │   │   └── Controllers/
 │   │       └── Api/
-│   │           ├── AuthController.php
-│   │           └── ExpenseController.php
+│   │           ├── AuthController.php (with OpenAPI annotations)
+│   │           └── ExpenseController.php (with OpenAPI annotations)
 │   ├── Jobs/
 │   │   ├── LogFirebaseEventJob.php
 │   │   └── SendDailyExpenseSummaryEmail.php
 │   ├── Mail/
 │   │   └── DailyExpenseSummaryMail.php
 │   ├── Models/
-│   │   ├── User.php
-│   │   └── Expense.php
+│   │   ├── User.php (with OpenAPI schema)
+│   │   └── Expense.php (with OpenAPI schema)
 │   └── Services/
 │       ├── CurrencyService.php
-│       └── FirebaseService.php
+│       └── FirebaseService.php (Google Analytics Measurement Protocol)
 ├── config/
 │   ├── app.php
 │   ├── auth.php
 │   ├── database.php
+│   ├── l5-swagger.php (Swagger configuration)
 │   └── services.php
 ├── database/
 │   └── migrations/
@@ -538,6 +614,8 @@ expense-tracking-api/
 │   ├── api.php
 │   └── console.php
 ├── storage/
+│   ├── api-docs/
+│   │   └── api-docs.json (Generated OpenAPI specification)
 │   ├── firebase/
 │   │   └── firebase_credentials.json
 │   └── logs/
@@ -554,16 +632,22 @@ expense-tracking-api/
 - **FirebaseService** - Manages Firebase Analytics event logging
 
 ### Controllers
-- **AuthController** - User registration, login, logout
-- **ExpenseController** - CRUD operations and summary endpoint
+- **AuthController** - User registration, login, logout (with OpenAPI annotations)
+- **ExpenseController** - CRUD operations and summary endpoint (with OpenAPI annotations)
 
 ### Jobs
 - **LogFirebaseEventJob** - Async Firebase event processing
 - **SendDailyExpenseSummaryEmail** - Daily expense summary notifications
 
 ### Models
-- **User** - User account with preferred currency
-- **Expense** - Expense record with currency conversion
+- **User** - User account with preferred currency (OpenAPI schema)
+- **Expense** - Expense record with currency conversion (OpenAPI schema)
+
+### API Documentation
+- **l5-swagger** - Generates OpenAPI 3.0 documentation
+- **Swagger UI** - Interactive API documentation at `/api/documentation`
+- **OpenAPI JSON** - Raw specification at `/api-docs.json` or `storage/api-docs/api-docs.json`
+- **Annotations** - OpenAPI attributes in controllers and models
 
 ## 🐛 Troubleshooting
 
@@ -591,6 +675,58 @@ The application caches exchange rates for 12 hours. If you hit rate limits, cons
 - Using a paid API plan
 - Increasing cache duration
 - Implementing Redis for distributed caching
+
+### Swagger UI Not Loading
+If Swagger UI doesn't load properly:
+1. Regenerate documentation: `php artisan l5-swagger:generate`
+2. Clear cache: `php artisan cache:clear`
+3. Check that the server is running: `php artisan serve`
+4. Access: `http://localhost:8000/api/documentation`
+
+### Adding New Endpoints to Swagger
+When adding new API endpoints, use OpenAPI annotations:
+
+```php
+/**
+ * @OA\Get(
+ *     path="/your-endpoint",
+ *     summary="Endpoint description",
+ *     tags={"YourTag"},
+ *     security={{"sanctum":{}}},
+ *     @OA\Response(response=200, description="Success")
+ * )
+ */
+public function yourMethod(Request $request)
+{
+    // Your code
+}
+```
+
+Then regenerate docs:
+```bash
+php artisan l5-swagger:generate
+```
+
+### Accessing API Documentation
+
+The API documentation is available in multiple formats:
+
+1. **Interactive Swagger UI:**
+   - URL: `http://localhost:8000/api/documentation`
+   - Features: Try out endpoints, see examples, test authentication
+
+2. **OpenAPI JSON Specification:**
+   - URL: `http://localhost:8000/api-docs.json`
+   - Use for: API client generation, Postman import, external tools
+
+3. **Local JSON File:**
+   - Path: `storage/api-docs/api-docs.json`
+   - Use for: Offline access, version control, sharing with team
+
+4. **Import to Postman:**
+   - Open Postman → Import → Link
+   - Paste: `http://localhost:8000/api-docs.json`
+   - Or import the local file: `storage/api-docs/api-docs.json`
 
 ## 📝 License
 
