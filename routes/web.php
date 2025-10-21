@@ -3,5 +3,9 @@
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return redirect('/api');
+});
+
+Route::get('/api', function () {
+    return view('api-welcome');
 });
